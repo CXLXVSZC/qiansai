@@ -6,7 +6,7 @@
         #endif
                 /* Number of interrupts allocated */
         #ifndef VECTOR_DATA_IRQ_COUNT
-        #define VECTOR_DATA_IRQ_COUNT    (22)
+        #define VECTOR_DATA_IRQ_COUNT    (26)
         #endif
         /* ISR prototypes */
         void ceu_isr(void);
@@ -73,8 +73,16 @@
         #define CAN1_TX_IRQn          ((IRQn_Type) 20) /* CAN1 TX (Transmit interrupt) */
         #define VECTOR_NUMBER_CAN1_COMFRX ((IRQn_Type) 21) /* CAN1 COMFRX (Common FIFO receive interrupt) */
         #define CAN1_COMFRX_IRQn          ((IRQn_Type) 21) /* CAN1 COMFRX (Common FIFO receive interrupt) */
+        #define VECTOR_NUMBER_SCI5_RXI ((IRQn_Type) 22) /* SCI5 RXI (Receive data full) */
+        #define SCI5_RXI_IRQn          ((IRQn_Type) 22) /* SCI5 RXI (Receive data full) */
+        #define VECTOR_NUMBER_SCI5_TXI ((IRQn_Type) 23) /* SCI5 TXI (Transmit data empty) */
+        #define SCI5_TXI_IRQn          ((IRQn_Type) 23) /* SCI5 TXI (Transmit data empty) */
+        #define VECTOR_NUMBER_SCI5_TEI ((IRQn_Type) 24) /* SCI5 TEI (Transmit end) */
+        #define SCI5_TEI_IRQn          ((IRQn_Type) 24) /* SCI5 TEI (Transmit end) */
+        #define VECTOR_NUMBER_SCI5_ERI ((IRQn_Type) 25) /* SCI5 ERI (Receive error) */
+        #define SCI5_ERI_IRQn          ((IRQn_Type) 25) /* SCI5 ERI (Receive error) */
         /* The number of entries required for the ICU vector table. */
-        #define BSP_ICU_VECTOR_NUM_ENTRIES (22)
+        #define BSP_ICU_VECTOR_NUM_ENTRIES (26)
 
         #ifdef __cplusplus
         }

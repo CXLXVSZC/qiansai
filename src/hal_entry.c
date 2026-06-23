@@ -9,7 +9,7 @@
 #include "pmu_ethosu.h"
 #include "yolo_rtthread.h"
 #include "can_app.h"
-#include "motor_can.h"
+#include "motor_uart.h"
 #define DBG_TAG     "main"
 #define DBG_LVL     DBG_INFO
 #include "rtdbg.h"
@@ -291,11 +291,11 @@ static void app_detect_thread_entry(void *parameter)
         {
             rt_sem_release(&g_display_sem);
         }
-        motor_can_set_speed(0x02,
-                                MOTOR_CAN_DIR_CW,
-                                20,
-                                5,
-                                MOTOR_CAN_SYNC_DISABLE);
+        motor_uart_set_speed(0x02,
+                             MOTOR_UART_DIR_CW,
+                             20,
+                             5,
+                             MOTOR_UART_SYNC_DISABLE);
         led_status = !led_status;
         rt_pin_write(LED_PIN, led_status ? PIN_HIGH : PIN_LOW);
     }
@@ -366,9 +366,9 @@ void hal_entry(void)
     }
     g_display_sem_ready = RT_TRUE;
 
-    if (can_app_init(motor_can_get_payload) != RT_EOK)
+    if (motor_uart_init(RT_NULL) != RT_EOK)
     {
-        LOG_E("CAN init failed");
+        LOG_E("UART motor init failed");
         return;
     }
 
