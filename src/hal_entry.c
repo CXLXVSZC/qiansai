@@ -9,7 +9,7 @@
 #include "pmu_ethosu.h"
 #include "yolo_rtthread.h"
 #include "can_app.h"
-
+#include "motor_can.h"
 #define DBG_TAG     "main"
 #define DBG_LVL     DBG_INFO
 #include "rtdbg.h"
@@ -220,17 +220,7 @@ static rt_err_t app_can_get_payload(rt_uint8_t data[8])
         return ret;
     }
 
-    data[0] = (rt_uint8_t)g_detect_box_num;
-    if (g_detect_box_num > 0)
-    {
-        score_x100 = (int)(g_detect_boxes[0].score * 100.0f + 0.5f);
-        data[1] = g_detect_boxes[0].cls;
-        data[2] = (rt_uint8_t)score_x100;
-        data[3] = (rt_uint8_t)CLAMP(g_detect_boxes[0].x1, 0, 255);
-        data[4] = (rt_uint8_t)CLAMP(g_detect_boxes[0].y1, 0, 255);
-        data[5] = (rt_uint8_t)CLAMP(g_detect_boxes[0].x2, 0, 255);
-        data[6] = (rt_uint8_t)CLAMP(g_detect_boxes[0].y2, 0, 255);
-    }
+
 
     rt_mutex_release(&g_detect_lock);
 
@@ -301,7 +291,11 @@ static void app_detect_thread_entry(void *parameter)
         {
             rt_sem_release(&g_display_sem);
         }
-
+        motor_can_set_speed(0x02,
+                                MOTOR_CAN_DIR_CW,
+                                20,
+                                5,
+                                MOTOR_CAN_SYNC_DISABLE);
         led_status = !led_status;
         rt_pin_write(LED_PIN, led_status ? PIN_HIGH : PIN_LOW);
     }
@@ -372,7 +366,7 @@ void hal_entry(void)
     }
     g_display_sem_ready = RT_TRUE;
 
-    if (can_app_init(app_can_get_payload) != RT_EOK)
+    if (can_app_init(motor_can_get_payload) != RT_EOK)
     {
         LOG_E("CAN init failed");
         return;

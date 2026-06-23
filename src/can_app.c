@@ -4,8 +4,7 @@
 
 #define CAN_TX_DEV_NAME        "canfd0"
 #define CAN_RX_DEV_NAME        "canfd1"
-#define CAN_TX_FRAME_ID        0x01
-#define CAN_TX_PERIOD_MS       100
+#define CAN_TX_PERIOD_MS       1000
 #define CAN_RX_WAIT_TICK       10
 
 static struct rt_semaphore g_can_rx_sem;
@@ -77,12 +76,7 @@ static void can_send_latest_payload(void)
     }
 
     rt_memset(&txmsg, 0, sizeof(txmsg));
-    txmsg.id = CAN_TX_FRAME_ID;
-    txmsg.ide = RT_CAN_STDID;
-    txmsg.rtr = RT_CAN_DTR;
-    txmsg.len = 8;
-
-    if (g_can_payload_getter(txmsg.data) != RT_EOK)
+    if (g_can_payload_getter(&txmsg) != RT_EOK)
     {
         return;
     }
