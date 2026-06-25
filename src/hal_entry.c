@@ -24,7 +24,7 @@
 #define THREAD_TIMESLICE 10
 
 static volatile bool led_status = false;
-
+int16_t ii=0;
 extern sensor_t sensor;
 static uint8_t g_image_rgb565_sdram_buffer[CAM_WIDTH * CAM_HEIGHT * 2] BSP_PLACE_IN_SECTION(".ospi1_cs0_noinit") BSP_ALIGN_VARIABLE(8);
 static uint8_t g_display_rgb565_sdram_buffer[CAM_WIDTH * CAM_HEIGHT * 2] BSP_PLACE_IN_SECTION(".ospi1_cs0_noinit") BSP_ALIGN_VARIABLE(8);
@@ -119,7 +119,11 @@ static void app_lcd_draw_rect_cpu(const det_box_t *box, uint32_t fallback_argb, 
     int16_t y1;
     int16_t x2;
     int16_t y2;
+    int16_t x;
+    int16_t y;
 
+    ii++;
+    if(ii==6)ii=0;
     if (box == RT_NULL)
     {
         return;
@@ -145,6 +149,44 @@ static void app_lcd_draw_rect_cpu(const det_box_t *box, uint32_t fallback_argb, 
     {
         return;
     }
+    if(ii==3){
+         x=(x1+x2)/2;
+         if(x>242){
+         motor_uart_set_speed(0x01,
+                               MOTOR_UART_DIR_CCW,
+                               10,
+                               5,
+                               MOTOR_UART_SYNC_DISABLE);}
+         else if(x<237){
+                  motor_uart_set_speed(0x01,
+                                        MOTOR_UART_DIR_CW,
+                                        10,
+                                        5,
+                                        MOTOR_UART_SYNC_DISABLE);}
+         else motor_uart_set_speed(0x02,
+                 MOTOR_UART_DIR_CW,
+                 0,
+                 5,
+                 MOTOR_UART_SYNC_DISABLE);
+    }else if(ii==5){
+         y=(y1+y2)/2;
+                 if(y>402){
+                 motor_uart_set_speed(0x02,
+                                       MOTOR_UART_DIR_CW,
+                                       10,
+                                       5,
+                                       MOTOR_UART_SYNC_DISABLE);}
+                 else if(y<397){
+                          motor_uart_set_speed(0x02,
+                                                MOTOR_UART_DIR_CCW,
+                                                10,
+                                                5,
+                                                MOTOR_UART_SYNC_DISABLE);}
+                 else motor_uart_set_speed(0x01,
+                         MOTOR_UART_DIR_CW,
+                         0,
+                         5,
+                         MOTOR_UART_SYNC_DISABLE);}
 
     for (d2_width t = 0; t < thickness; t++)
     {
@@ -291,11 +333,7 @@ static void app_detect_thread_entry(void *parameter)
         {
             rt_sem_release(&g_display_sem);
         }
-        motor_uart_set_speed(0x02,
-                             MOTOR_UART_DIR_CW,
-                             20,
-                             5,
-                             MOTOR_UART_SYNC_DISABLE);
+
         led_status = !led_status;
         rt_pin_write(LED_PIN, led_status ? PIN_HIGH : PIN_LOW);
     }
