@@ -10,6 +10,7 @@
 #include "yolo_rtthread.h"
 #include "can_app.h"
 #include "motor_uart.h"
+ #include "lcd_display.h"
 #define DBG_TAG     "main"
 #define DBG_LVL     DBG_INFO
 #include "rtdbg.h"
@@ -347,12 +348,22 @@ static void app_display_thread_entry(void *parameter)
     uint32_t argb = 0xFF00FF00;
 
     RT_UNUSED(parameter);
-
+    //static int last_num = -1;
     while (1)
     {
+
+//         int num = 1234;
+//
+//         if (num != last_num)
+//         {
+//             lcd_display_show_number(num);
+//             last_num = num;
+//         }
+
+
         rt_sem_take(&g_display_sem, RT_WAITING_FOREVER);
 
-        rt_mutex_take(&g_detect_lock, RT_WAITING_FOREVER);
+       rt_mutex_take(&g_detect_lock, RT_WAITING_FOREVER);
         rt_memcpy(g_lcd_rgb565_sdram_buffer, g_display_rgb565_sdram_buffer, sizeof(g_lcd_rgb565_sdram_buffer));
         local_box_num = g_detect_box_num;
         if (local_box_num > 0)
@@ -368,7 +379,7 @@ static void app_display_thread_entry(void *parameter)
                                    CAM_HEIGHT,
                                    argb,
                                    thickness,
-                                   local_boxes,
+                                  local_boxes,
                                    local_box_num);
     }
 }
