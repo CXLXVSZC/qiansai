@@ -82,6 +82,159 @@ static uint16_t app_class_color_rgb565(uint8_t cls, uint32_t fallback_argb)
     return app_argb8888_to_rgb565(fallback_argb);
 }
 
+static void app_handle_motor_logic(const det_box_t *box)
+ {
+
+    int32_t x1;
+        int32_t y1;
+        int32_t x2;
+            int32_t y2;
+     int32_t x;
+     int32_t y;
+     int16_t cls;
+     static int8_t y_state_prev = 0;
+     static int8_t x_state_prev = 0;
+     static int8_t y_state_cur = 0;
+     static int8_t x_state_cur = 0;
+     if (box == RT_NULL)
+         return;
+     x1 = CLAMP(box->x1, 0, LCD_WIDTH - 1);
+        y1 = CLAMP(box->y1, 0, LCD_HEIGHT - 1);
+        x2 = CLAMP(box->x2, 0, LCD_WIDTH - 1);
+        y2 = CLAMP(box->y2, 0, LCD_HEIGHT - 1);
+
+     x = (x1 + x2) / 2;
+     y = (y1 + y2) / 2;
+     cls = box->cls;
+
+     if(record_all_updated==RT_TRUE){
+            record_update_mask = 0;
+            //record_all_updated = RT_FALSE;
+            motor_uart_set_position(1,MOTOR_UART_DIR_CCW,10,1,(record_pos[2]+record_pos[3])/2,MOTOR_UART_POS_MODE_ABSOLUTE,MOTOR_UART_SYNC_DISABLE);
+            rt_thread_mdelay(10);
+            motor_uart_set_position(2,MOTOR_UART_DIR_CW,10,1,(record_pos[0]+record_pos[1])/2,MOTOR_UART_POS_MODE_ABSOLUTE,MOTOR_UART_SYNC_DISABLE);
+            lcd_display_show_number(record_pos[0]);
+            rt_thread_mdelay(1000);
+            lcd_display_show_number(record_pos[1]);
+                   rt_thread_mdelay(1000);
+                   lcd_display_show_number(record_pos[2]);
+                          rt_thread_mdelay(1000);
+                          lcd_display_show_number(record_pos[3]);
+                                 rt_thread_mdelay(1000);
+
+
+        }
+
+          else if(ii==0&&record_all_updated == RT_FALSE){
+
+             if(x>240){
+                 x_state_prev=x_state_cur;
+                 x_state_cur=1;
+                 if(x_state_cur*x_state_prev==-1){
+                     if (motor_uart_read_position(0x01, &record_pos[2]) == RT_EOK)
+                     {
+                         record_pos_mark_updated(2);
+                         led_status = !led_status;
+                                rt_pin_write(LED_PIN, led_status ? PIN_HIGH : PIN_LOW);
+                     }
+                     else
+                     {
+                         rt_thread_mdelay(10);
+                     }
+                   }
+
+
+
+
+             motor_uart_set_speed(0x01,
+                                   MOTOR_UART_DIR_CCW,
+                                   10,
+                                   5,
+                                   MOTOR_UART_SYNC_DISABLE);}
+             else if(x<239){
+                 x_state_prev=x_state_cur;
+                                 x_state_cur=-1;
+                                 if(x_state_cur*x_state_prev==-1){
+
+
+                                     if (motor_uart_read_position(0x01, &record_pos[3]) == RT_EOK)
+                                     {
+                                         record_pos_mark_updated(3);
+                                         led_status = !led_status;
+                                                rt_pin_write(LED_PIN, led_status ? PIN_HIGH : PIN_LOW);
+                                     }
+                                     else
+                                     {
+                                         rt_thread_mdelay(10);
+                                     }
+                   }
+
+
+
+                      motor_uart_set_speed(0x01,
+                                            MOTOR_UART_DIR_CW,
+                                            10,
+                                            5,
+                                            MOTOR_UART_SYNC_DISABLE);}
+             else motor_uart_set_speed(0x02,
+                     MOTOR_UART_DIR_CW,
+                     0,
+                     5,
+                     MOTOR_UART_SYNC_DISABLE);
+        }else if(ii==2&&record_all_updated == RT_FALSE){
+
+                     if(y>400){
+                         y_state_prev=y_state_cur;
+                                         y_state_cur=1;
+                                         if(y_state_cur*y_state_prev==-1){
+                                             if (motor_uart_read_position(0x02, &record_pos[0]) == RT_EOK)
+                                             {
+                                                 record_pos_mark_updated(0);
+                                                 led_status = !led_status;
+                                                        rt_pin_write(LED_PIN, led_status ? PIN_HIGH : PIN_LOW);
+                                             }
+                                             else
+                                             {
+                                                 rt_thread_mdelay(10);
+                                             }
+                           }
+
+
+
+                     motor_uart_set_speed(0x02,
+                                           MOTOR_UART_DIR_CW,
+                                           10,
+                                           5,
+                                           MOTOR_UART_SYNC_DISABLE);}
+                     else if(y<399){
+                         y_state_prev=y_state_cur;
+                                         y_state_cur=-1;
+                                         if(y_state_cur*y_state_prev==-1){
+
+                                             if (motor_uart_read_position(0x02, &record_pos[1]) == RT_EOK)
+                                             {
+                                                 record_pos_mark_updated(1);
+                                                 led_status = !led_status;
+                                                        rt_pin_write(LED_PIN, led_status ? PIN_HIGH : PIN_LOW);
+                                             }
+                                             else
+                                             {
+                                                 rt_thread_mdelay(10);
+                                             }
+                }
+                              motor_uart_set_speed(0x02,
+                                                    MOTOR_UART_DIR_CCW,
+                                                    10,
+                                                    5,
+                                                    MOTOR_UART_SYNC_DISABLE);}
+                     else motor_uart_set_speed(0x01,
+                             MOTOR_UART_DIR_CW,
+                             0,
+                             5,
+                             MOTOR_UART_SYNC_DISABLE);
+
+ }}
+
 static void app_lcd_draw_hline(uint16_t *fb, int16_t x1, int16_t x2, int16_t y, uint16_t color)
 {
     if ((fb == RT_NULL) || (y < 0) || (y >= LCD_HEIGHT))
@@ -165,88 +318,6 @@ static void app_lcd_draw_rect_cpu(const det_box_t *box, uint32_t fallback_argb, 
     {
         return;
     }
-    if(record_all_updated==RT_TRUE){
-        record_update_mask = 0;
-        //record_all_updated = RT_FALSE;
-        motor_uart_set_position(1,MOTOR_UART_DIR_CCW,10,1,(record_pos[2]+record_pos[3])/2,MOTOR_UART_POS_MODE_ABSOLUTE,MOTOR_UART_SYNC_DISABLE);
-        rt_thread_mdelay(10);
-        motor_uart_set_position(2,MOTOR_UART_DIR_CW,10,1,(record_pos[0]+record_pos[1])/2,MOTOR_UART_POS_MODE_ABSOLUTE,MOTOR_UART_SYNC_DISABLE);
-        lcd_display_show_number(record_pos[0]);
-        rt_thread_mdelay(1000);
-        lcd_display_show_number(record_pos[1]);
-               rt_thread_mdelay(1000);
-               lcd_display_show_number(record_pos[2]);
-                      rt_thread_mdelay(1000);
-                      lcd_display_show_number(record_pos[3]);
-                             rt_thread_mdelay(1000);
-                             lcd_display_show_number(43210);
-                             rt_thread_mdelay(1000);
-                             lcd_display_show_number(98765);
-                                                          rt_thread_mdelay(1000);
-
-    }
-
-      else if(ii==0&&record_all_updated == RT_FALSE){
-         x=(x1+x2)/2;
-         if(x>240){
-
-             if (motor_uart_read_position(0x01, &record_pos[2]) == RT_EOK)
-             {
-                 record_pos_mark_updated(2);
-             }
-                                                   rt_thread_mdelay(10);
-         motor_uart_set_speed(0x01,
-                               MOTOR_UART_DIR_CCW,
-                               10,
-                               5,
-                               MOTOR_UART_SYNC_DISABLE);}
-         else if(x<239){
-             if (motor_uart_read_position(0x01, &record_pos[3]) == RT_EOK)
-             {
-                 record_pos_mark_updated(3);
-             }
-
-                                                   rt_thread_mdelay(10);
-                  motor_uart_set_speed(0x01,
-                                        MOTOR_UART_DIR_CW,
-                                        10,
-                                        5,
-                                        MOTOR_UART_SYNC_DISABLE);}
-         else motor_uart_set_speed(0x02,
-                 MOTOR_UART_DIR_CW,
-                 0,
-                 5,
-                 MOTOR_UART_SYNC_DISABLE);
-    }else if(ii==2&&record_all_updated == RT_FALSE){
-         y=(y1+y2)/2;
-                 if(y>400){
-                     if (motor_uart_read_position(0x02, &record_pos[0]) == RT_EOK)
-                     {
-                         record_pos_mark_updated(0);
-                     }
-
-                 rt_thread_mdelay(10);
-                 motor_uart_set_speed(0x02,
-                                       MOTOR_UART_DIR_CW,
-                                       10,
-                                       5,
-                                       MOTOR_UART_SYNC_DISABLE);}
-                 else if(y<399){
-                     if (motor_uart_read_position(0x02, &record_pos[1]) == RT_EOK)
-                     {
-                         record_pos_mark_updated(1);
-                     }
-                                      rt_thread_mdelay(10);
-                          motor_uart_set_speed(0x02,
-                                                MOTOR_UART_DIR_CCW,
-                                                10,
-                                                5,
-                                                MOTOR_UART_SYNC_DISABLE);}
-                 else motor_uart_set_speed(0x01,
-                         MOTOR_UART_DIR_CW,
-                         0,
-                         5,
-                         MOTOR_UART_SYNC_DISABLE);}
 
     for (d2_width t = 0; t < thickness; t++)
     {
@@ -344,7 +415,6 @@ static void app_detect_thread_entry(void *parameter)
         int32_t out_n;
 
         sensor_snapshot(&sensor, g_image_rgb565_sdram_buffer, 0);
-
         rgb565_to_rgb_hwc_int8_resize_192((const uint16_t *)g_image_rgb565_sdram_buffer,
                                           CAM_WIDTH,
                                           CAM_HEIGHT,
@@ -353,18 +423,18 @@ static void app_detect_thread_entry(void *parameter)
         RunModel_net1(false);
 
         output_p5 = GetModelOutputPtr_net1_PartitionedCall_1_70275();
-        output_p4 = GetModelOutputPtr_net1_PartitionedCall_0_70286();
+//        output_p4 = GetModelOutputPtr_net1_PartitionedCall_0_70286();
 
-        total += decode_output_layer_int8_hwc(output_p4,
-                                              GRID_SIZE_P4,
-                                              0,
-                                              OUTPUT_P4_SCALE,
-                                              OUTPUT_P4_ZERO_POINT,
-                                              LCD_WIDTH,
-                                              LCD_HEIGHT,
-                                              CONF_THRESH,
-                                              pool + total,
-                                              (int16_t)(sizeof(pool) / sizeof(pool[0])) - total);
+//        total += decode_output_layer_int8_hwc(output_p4,
+//                                              GRID_SIZE_P4,
+//                                              0,
+//                                              OUTPUT_P4_SCALE,
+//                                              OUTPUT_P4_ZERO_POINT,
+//                                              LCD_WIDTH,
+//                                              LCD_HEIGHT,
+//                                              CONF_THRESH,
+//                                              pool + total,
+//                                              (int16_t)(sizeof(pool) / sizeof(pool[0])) - total);
 
         total += decode_output_layer_int8_hwc(output_p5,
                                               GRID_SIZE_P5,
@@ -394,8 +464,7 @@ static void app_detect_thread_entry(void *parameter)
             rt_sem_release(&g_display_sem);
         }
 
-        led_status = !led_status;
-        rt_pin_write(LED_PIN, led_status ? PIN_HIGH : PIN_LOW);
+
     }
 }
 
@@ -418,7 +487,7 @@ static void app_display_thread_entry(void *parameter)
 //
 //     //           lcd_display_show_number(num);
 
-
+       if( record_all_updated == RT_FALSE){
            rt_sem_take(&g_display_sem, RT_WAITING_FOREVER);
 
              rt_mutex_take(&g_detect_lock, RT_WAITING_FOREVER);
@@ -439,8 +508,11 @@ static void app_display_thread_entry(void *parameter)
                                           argb,
                                         thickness,
                                    local_boxes,
-                                        local_box_num);
-
+                                        local_box_num);}
+            if (local_box_num > 0)
+             {
+                 app_handle_motor_logic(&local_boxes[0]);
+             }
 
 
     }
