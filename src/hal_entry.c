@@ -35,9 +35,24 @@ static rt_int32_t g_detect_box_num = 0;
 static struct rt_mutex g_detect_lock;
 static struct rt_semaphore g_display_sem;
 static rt_bool_t g_display_sem_ready = RT_FALSE;
+int32_t record_pos[4];
+static uint8_t  record_update_mask = 0;
+static rt_bool_t record_all_updated = RT_FALSE;
 
+static uint8_t record_count = 0;
 extern d2_device *d2_handle_obj_get(void);
 extern d2_renderbuffer *d2_renderbuffer_get(void);
+
+static void record_pos_mark_updated(uint8_t idx)
+ {
+     if (idx >= 4)
+         return;
+
+     record_update_mask |= (1U << idx); // 这个下标已更新过
+
+     if (record_update_mask == 0x0F)   // 1111，四个都至少更新过一次
+         record_all_updated = RT_TRUE;
+ }
 
 static uint16_t app_argb8888_to_rgb565(uint32_t argb)
 {
@@ -124,7 +139,7 @@ static void app_lcd_draw_rect_cpu(const det_box_t *box, uint32_t fallback_argb, 
     int16_t y;
 
     ii++;
-    if(ii==6)ii=0;
+    if(ii==4)ii=0;
     if (box == RT_NULL)
     {
         return;
@@ -150,15 +165,48 @@ static void app_lcd_draw_rect_cpu(const det_box_t *box, uint32_t fallback_argb, 
     {
         return;
     }
-    if(ii==3){
+    if(record_all_updated==RT_TRUE){
+        record_update_mask = 0;
+        //record_all_updated = RT_FALSE;
+        motor_uart_set_position(1,MOTOR_UART_DIR_CCW,10,1,(record_pos[2]+record_pos[3])/2,MOTOR_UART_POS_MODE_ABSOLUTE,MOTOR_UART_SYNC_DISABLE);
+        rt_thread_mdelay(10);
+        motor_uart_set_position(2,MOTOR_UART_DIR_CW,10,1,(record_pos[0]+record_pos[1])/2,MOTOR_UART_POS_MODE_ABSOLUTE,MOTOR_UART_SYNC_DISABLE);
+        lcd_display_show_number(record_pos[0]);
+        rt_thread_mdelay(1000);
+        lcd_display_show_number(record_pos[1]);
+               rt_thread_mdelay(1000);
+               lcd_display_show_number(record_pos[2]);
+                      rt_thread_mdelay(1000);
+                      lcd_display_show_number(record_pos[3]);
+                             rt_thread_mdelay(1000);
+                             lcd_display_show_number(43210);
+                             rt_thread_mdelay(1000);
+                             lcd_display_show_number(98765);
+                                                          rt_thread_mdelay(1000);
+
+    }
+
+      else if(ii==0&&record_all_updated == RT_FALSE){
          x=(x1+x2)/2;
-         if(x>242){
+         if(x>240){
+
+             if (motor_uart_read_position(0x01, &record_pos[2]) == RT_EOK)
+             {
+                 record_pos_mark_updated(2);
+             }
+                                                   rt_thread_mdelay(10);
          motor_uart_set_speed(0x01,
                                MOTOR_UART_DIR_CCW,
                                10,
                                5,
                                MOTOR_UART_SYNC_DISABLE);}
-         else if(x<237){
+         else if(x<239){
+             if (motor_uart_read_position(0x01, &record_pos[3]) == RT_EOK)
+             {
+                 record_pos_mark_updated(3);
+             }
+
+                                                   rt_thread_mdelay(10);
                   motor_uart_set_speed(0x01,
                                         MOTOR_UART_DIR_CW,
                                         10,
@@ -169,15 +217,26 @@ static void app_lcd_draw_rect_cpu(const det_box_t *box, uint32_t fallback_argb, 
                  0,
                  5,
                  MOTOR_UART_SYNC_DISABLE);
-    }else if(ii==5){
+    }else if(ii==2&&record_all_updated == RT_FALSE){
          y=(y1+y2)/2;
-                 if(y>402){
+                 if(y>400){
+                     if (motor_uart_read_position(0x02, &record_pos[0]) == RT_EOK)
+                     {
+                         record_pos_mark_updated(0);
+                     }
+
+                 rt_thread_mdelay(10);
                  motor_uart_set_speed(0x02,
                                        MOTOR_UART_DIR_CW,
                                        10,
                                        5,
                                        MOTOR_UART_SYNC_DISABLE);}
-                 else if(y<397){
+                 else if(y<399){
+                     if (motor_uart_read_position(0x02, &record_pos[1]) == RT_EOK)
+                     {
+                         record_pos_mark_updated(1);
+                     }
+                                      rt_thread_mdelay(10);
                           motor_uart_set_speed(0x02,
                                                 MOTOR_UART_DIR_CCW,
                                                 10,
@@ -346,41 +405,44 @@ static void app_display_thread_entry(void *parameter)
     int32_t local_box_num;
     d2_width thickness = 1;
     uint32_t argb = 0xFF00FF00;
-
     RT_UNUSED(parameter);
-    //static int last_num = -1;
+ //static int32_t oo=1;
     while (1)
     {
-
-//         int num = 1234;
+//        if(oo==1){
+//        rt_sem_take(&g_display_sem, RT_WAITING_FOREVER);
+//        lcd_display_show_cn_text("识别到焊盘个");
+//        oo=2;
+//        }
 //
-//         if (num != last_num)
-//         {
-//             lcd_display_show_number(num);
-//             last_num = num;
-//         }
+//
+//     //           lcd_display_show_number(num);
 
 
-        rt_sem_take(&g_display_sem, RT_WAITING_FOREVER);
+           rt_sem_take(&g_display_sem, RT_WAITING_FOREVER);
 
-       rt_mutex_take(&g_detect_lock, RT_WAITING_FOREVER);
-        rt_memcpy(g_lcd_rgb565_sdram_buffer, g_display_rgb565_sdram_buffer, sizeof(g_lcd_rgb565_sdram_buffer));
-        local_box_num = g_detect_box_num;
-        if (local_box_num > 0)
-        {
-            rt_memcpy(local_boxes, g_detect_boxes, local_box_num * sizeof(det_box_t));
-        }
-        rt_mutex_release(&g_detect_lock);
+             rt_mutex_take(&g_detect_lock, RT_WAITING_FOREVER);
+             rt_memcpy(g_lcd_rgb565_sdram_buffer, g_display_rgb565_sdram_buffer, sizeof(g_lcd_rgb565_sdram_buffer)
+             );
+               local_box_num = g_detect_box_num;
+               if (local_box_num > 0)
+            {
+                rt_memcpy(local_boxes, g_detect_boxes, local_box_num * sizeof(det_box_t));
+            }
+          rt_mutex_release(&g_detect_lock);
 
-        lcd_draw_camera_with_boxes(0,
-                                   0,
-                                   g_lcd_rgb565_sdram_buffer,
-                                   CAM_WIDTH,
-                                   CAM_HEIGHT,
-                                   argb,
-                                   thickness,
-                                  local_boxes,
-                                   local_box_num);
+            lcd_draw_camera_with_boxes(0,
+                                       0,
+                                  g_lcd_rgb565_sdram_buffer,
+                                      CAM_WIDTH,
+                                      CAM_HEIGHT,
+                                          argb,
+                                        thickness,
+                                   local_boxes,
+                                        local_box_num);
+
+
+
     }
 }
 
