@@ -19,8 +19,8 @@
 #define MOTOR_UART_POS_MODE_ABSOLUTE    0x01U
 
 #define MOTOR_UART_CMD_READ_POS       0x36U
-#define MOTOR_UART_READ_TIMEOUT_MS    200    // 读取超时
-#define MOTOR_UART_READ_RETRY_INTERVAL_MS 10 // 重试间隔
+#define MOTOR_UART_READ_TIMEOUT_MS    300    // 读取超时
+#define MOTOR_UART_READ_RETRY_INTERVAL_MS 30 // 重试间隔
 
 /* 命令码 */
 #define MOTOR_UART_CMD_STOP           0xFEU

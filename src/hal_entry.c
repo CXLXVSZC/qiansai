@@ -110,17 +110,35 @@ static void app_handle_motor_logic(const det_box_t *box)
      if(record_all_updated==RT_TRUE){
             record_update_mask = 0;
             //record_all_updated = RT_FALSE;
-            motor_uart_set_position(1,MOTOR_UART_DIR_CCW,10,1,(record_pos[2]+record_pos[3])/2,MOTOR_UART_POS_MODE_ABSOLUTE,MOTOR_UART_SYNC_DISABLE);
-            rt_thread_mdelay(10);
-            motor_uart_set_position(2,MOTOR_UART_DIR_CW,10,1,(record_pos[0]+record_pos[1])/2,MOTOR_UART_POS_MODE_ABSOLUTE,MOTOR_UART_SYNC_DISABLE);
-            lcd_display_show_number(record_pos[0]);
-            rt_thread_mdelay(1000);
-            lcd_display_show_number(record_pos[1]);
-                   rt_thread_mdelay(1000);
-                   lcd_display_show_number(record_pos[2]);
-                          rt_thread_mdelay(1000);
-                          lcd_display_show_number(record_pos[3]);
-                                 rt_thread_mdelay(1000);
+            int32_t target11 = (record_pos[2] + record_pos[3]) * 25 / 1024;
+             int32_t target22 = (record_pos[0] + record_pos[1]) * 25 / 1024;
+
+             rt_uint8_t dir1 = (target11 >= 0) ? MOTOR_UART_DIR_CW : MOTOR_UART_DIR_CCW;
+             rt_uint8_t dir2 = (target22 >= 0) ? MOTOR_UART_DIR_CW : MOTOR_UART_DIR_CCW;
+
+             rt_uint32_t pulse1 = (target11 >= 0) ? (rt_uint32_t)target11 : (rt_uint32_t)(-target11);
+             rt_uint32_t pulse2 = (target22 >= 0) ? (rt_uint32_t)target22 : (rt_uint32_t)(-target22);
+             rt_thread_mdelay(100);
+             motor_uart_set_position(1, dir1, 10, 1, pulse1,
+                                     MOTOR_UART_POS_MODE_ABSOLUTE, MOTOR_UART_SYNC_DISABLE);
+             rt_thread_mdelay(100);
+             motor_uart_set_position(2, dir2, 10, 1, pulse2,
+                                     MOTOR_UART_POS_MODE_ABSOLUTE, MOTOR_UART_SYNC_DISABLE);
+             rt_thread_mdelay(3000);
+             motor_uart_set_position(1, MOTOR_UART_DIR_CCW, 50, 1, 29000,
+                                                  MOTOR_UART_POS_MODE_RELATIVE, MOTOR_UART_SYNC_DISABLE);
+                          rt_thread_mdelay(100);
+                          motor_uart_set_position(2, MOTOR_UART_DIR_CCW, 50, 1, 18000,
+                                                  MOTOR_UART_POS_MODE_RELATIVE, MOTOR_UART_SYNC_DISABLE);
+
+                          rt_thread_mdelay(20000);
+                                                    motor_uart_set_position(3, MOTOR_UART_DIR_CCW, 10, 1, 3000,
+                                                                            MOTOR_UART_POS_MODE_RELATIVE, MOTOR_UART_SYNC_DISABLE);
+                          rt_thread_mdelay(2000);
+                          motor_uart_set_position(3, MOTOR_UART_DIR_CW, 10, 1, 3000,
+                                                                                                      MOTOR_UART_POS_MODE_RELATIVE, MOTOR_UART_SYNC_DISABLE);
+                                                    rt_thread_mdelay(20000);
+
 
 
         }
