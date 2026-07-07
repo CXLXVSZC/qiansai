@@ -323,6 +323,10 @@
 
 /* end of Kendryte SDK */
 
+/* MM32 HAL & SDK Drivers */
+
+/* end of MM32 HAL & SDK Drivers */
+
 /* WCH HAL & SDK Drivers */
 
 /* end of WCH HAL & SDK Drivers */
@@ -461,6 +465,7 @@
 #define BSP_UART8_TX_BUFSIZE 0
 #define BSP_USING_I2C1
 #define BSP_USING_PWM
+#define BSP_USING_PWM2
 #define BSP_USING_PWM7
 #define BSP_USING_CANFD
 #define BSP_USING_CAN0

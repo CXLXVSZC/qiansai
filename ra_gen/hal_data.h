@@ -4,6 +4,8 @@
 #include <stdint.h>
 #include "bsp_api.h"
 #include "common_data.h"
+#include "r_gpt.h"
+#include "r_timer_api.h"
 #include "r_sci_b_uart.h"
             #include "r_uart_api.h"
 #include "r_canfd.h"
@@ -12,11 +14,29 @@
 #include "r_transfer_api.h"
 #include "r_ospi_b.h"
 #include "r_spi_flash_api.h"
-#include "r_gpt.h"
-#include "r_timer_api.h"
 #include "r_capture_api.h"
             #include "r_ceu.h"
 FSP_HEADER
+/** Timer on GPT Instance. */
+extern const timer_instance_t g_timer7;
+
+/** Access the GPT instance using these structures when calling API functions directly (::p_api is not used). */
+extern gpt_instance_ctrl_t g_timer7_ctrl;
+extern const timer_cfg_t g_timer7_cfg;
+
+#ifndef NULL
+void NULL(timer_callback_args_t * p_args);
+#endif
+/** Timer on GPT Instance. */
+extern const timer_instance_t g_timer2;
+
+/** Access the GPT instance using these structures when calling API functions directly (::p_api is not used). */
+extern gpt_instance_ctrl_t g_timer2_ctrl;
+extern const timer_cfg_t g_timer2_cfg;
+
+#ifndef NULL
+void NULL(timer_callback_args_t * p_args);
+#endif
 /** UART on SCI Instance. */
             extern const uart_instance_t      g_uart5;
 
@@ -73,16 +93,6 @@ void NULL(transfer_callback_args_t * p_args);
 extern const spi_flash_instance_t g_ospi1;
 extern ospi_b_instance_ctrl_t g_ospi1_ctrl;
 extern const spi_flash_cfg_t g_ospi1_cfg;
-/** Timer on GPT Instance. */
-extern const timer_instance_t g_timer7;
-
-/** Access the GPT instance using these structures when calling API functions directly (::p_api is not used). */
-extern gpt_instance_ctrl_t g_timer7_ctrl;
-extern const timer_cfg_t g_timer7_cfg;
-
-#ifndef NULL
-void NULL(timer_callback_args_t * p_args);
-#endif
 /** Timer on GPT Instance. */
 extern const timer_instance_t g_timer4;
 
