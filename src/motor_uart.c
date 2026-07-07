@@ -17,6 +17,14 @@ static rt_bool_t motor_uart_valid_sync(rt_uint8_t sync_flag)
     return (sync_flag == MOTOR_UART_SYNC_DISABLE) || (sync_flag == MOTOR_UART_SYNC_ENABLE);
 }
 
+static void motor_uart_drain_rx(void)
+  {
+      rt_uint8_t dump[32];
+      while (rt_device_read(g_motor_uart_dev, 0, dump, sizeof(dump)) > 0)
+      {
+      }
+  }
+
 rt_err_t motor_uart_init(const char *uart_name)
 {
     rt_err_t ret;
@@ -232,7 +240,8 @@ rt_err_t motor_uart_read_position(rt_uint8_t address, int32_t *position)
     tx_frame[2] = MOTOR_UART_CHECK_BYTE;
 
     rt_mutex_take(&g_motor_uart_lock, RT_WAITING_FOREVER);
-
+    motor_uart_drain_rx();
+     rt_thread_mdelay(2);
     // 发送
     if (rt_device_write(g_motor_uart_dev, 0, tx_frame, sizeof(tx_frame)) != sizeof(tx_frame))
     {
