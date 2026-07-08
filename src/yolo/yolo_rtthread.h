@@ -12,7 +12,7 @@
 #define EPSILON                1e-7f
 #define MAX_BOXES              16
 #define CLASS_NUM              3
-#define CONF_THRESH            0.45f
+#define CONF_THRESH            0.25f
 #define NMS_THRESH             0.35f
 #define IOU_MODE_DIou          1
 #define INPUT_W                192
