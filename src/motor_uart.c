@@ -222,85 +222,40 @@ rt_err_t motor_uart_read_position(rt_uint8_t address, int32_t *position)
     rt_uint8_t rx_frame[8] = {0};  // 正确返回8字节
     rt_size_t rx_len = 0;
     rt_tick_t start_tick, timeout_tick;
-
     if (position == RT_NULL)
         return -RT_EINVAL;
-
     if (g_motor_uart_dev == RT_NULL)
-    {
-        ret = motor_uart_init(RT_NULL);
-        if (ret != RT_EOK)
-            return ret;
-    }
-
-    tx_frame[0] = address;
-    tx_frame[1] = MOTOR_UART_CMD_READ_POS;
-    tx_frame[2] = MOTOR_UART_CHECK_BYTE;
-
+    {ret = motor_uart_init(RT_NULL);if (ret != RT_EOK)return ret;}
+    tx_frame[0] = address;tx_frame[1] = MOTOR_UART_CMD_READ_POS;tx_frame[2] = MOTOR_UART_CHECK_BYTE;
     rt_mutex_take(&g_motor_uart_lock, RT_WAITING_FOREVER);
-    motor_uart_drain_rx();
-        rt_thread_mdelay(2);
+    motor_uart_drain_rx();rt_thread_mdelay(2);
     // 发送
     if (rt_device_write(g_motor_uart_dev, 0, tx_frame, sizeof(tx_frame)) != sizeof(tx_frame))
-    {
-        rt_mutex_release(&g_motor_uart_lock);
-        return -RT_ERROR;
-    }
-
+    {rt_mutex_release(&g_motor_uart_lock);return -RT_ERROR;}
     // 接收，超时
     start_tick = rt_tick_get();
     timeout_tick = rt_tick_from_millisecond(MOTOR_UART_READ_TIMEOUT_MS);
-
     while (rx_len < sizeof(rx_frame))
-    {
-        rt_size_t bytes = rt_device_read(g_motor_uart_dev, 0, rx_frame + rx_len, sizeof(rx_frame) - rx_len);
-        if (bytes > 0)
-        {
-            rx_len += bytes;
-        }
-        else
-        {
-            if (rt_tick_get() - start_tick >= timeout_tick)
-                break;
-            rt_thread_mdelay(MOTOR_UART_READ_RETRY_INTERVAL_MS);
-        }
-    }
-
+    {rt_size_t bytes = rt_device_read(g_motor_uart_dev, 0, rx_frame + rx_len, sizeof(rx_frame) - rx_len);
+        if (bytes > 0){rx_len += bytes;}else{if (rt_tick_get() - start_tick >= timeout_tick)break;rt_thread_mdelay(MOTOR_UART_READ_RETRY_INTERVAL_MS);}}
     rt_mutex_release(&g_motor_uart_lock);
-
     // 检查收到的长度
     if (rx_len < 4)  // 错误帧至少4字节
         return -RT_ETIMEOUT;
-
     // 如果是错误帧（4字节）
     if (rx_len == 4)
-    {
-        if (rx_frame[0] == address && rx_frame[1] == 0x00 && rx_frame[2] == 0xEE && rx_frame[3] == 0x6B)
-            return -RT_ERROR;  // 命令错误（如条件不满足）
-        else
-            return -RT_ERROR;  // 格式错误
-    }
-
+    {if (rx_frame[0] == address && rx_frame[1] == 0x00 && rx_frame[2] == 0xEE && rx_frame[3] == 0x6B)return -RT_ERROR;  // 命令错误（如条件不满足）
+    else return -RT_ERROR;  }// 格式错误}
     // 正确返回8字节
-    if (rx_len != 8)
-        return -RT_ERROR;
-
+    if (rx_len != 8)return -RT_ERROR;
     // 校验
-    if (rx_frame[0] != address || rx_frame[1] != MOTOR_UART_CMD_READ_POS || rx_frame[7] != MOTOR_UART_CHECK_BYTE)
-        return -RT_ERROR;
-
+    if (rx_frame[0] != address || rx_frame[1] != MOTOR_UART_CMD_READ_POS || rx_frame[7] != MOTOR_UART_CHECK_BYTE)return -RT_ERROR;
     // 提取符号位（0正，1负）
     uint8_t sign = rx_frame[2];
     // 提取4字节位置（大端）：索引3~6
-    uint32_t pos_abs = ((uint32_t)rx_frame[3] << 24) |
-                       ((uint32_t)rx_frame[4] << 16) |
-                       ((uint32_t)rx_frame[5] << 8) |
-                       (uint32_t)rx_frame[6];
-
+    uint32_t pos_abs = ((uint32_t)rx_frame[3] << 24) |((uint32_t)rx_frame[4] << 16) |((uint32_t)rx_frame[5] << 8) |(uint32_t)rx_frame[6];
     int32_t pos_val = (int32_t)pos_abs;
-    if (sign == 1)
-        pos_val = -pos_val;
-
+    if (sign == 1)pos_val = -pos_val;
     *position = pos_val;
     return RT_EOK;
 }
